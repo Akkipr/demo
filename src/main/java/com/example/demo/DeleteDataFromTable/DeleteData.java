@@ -13,7 +13,7 @@ public class DeleteData {
     @Autowired      // avoid constructor 
     private CreatePersonRepo personRepo;
 
-    @GetMapping("/deletePerson")
+    @GetMapping("/deletePerson")        // DeleteMapping does not seem to work, getting error 405
     public String deletePerson() {
         personRepo.deleteById((long) 1);
         return "Person Deleted";
