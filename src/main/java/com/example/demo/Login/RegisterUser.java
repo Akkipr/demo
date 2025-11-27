@@ -5,6 +5,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpSession;
+
 @RestController
 public class RegisterUser {
 
@@ -12,7 +14,7 @@ public class RegisterUser {
     private UserRepo userRepo;
 
     @GetMapping("/register")
-    public String register(@RequestParam String name, @RequestParam String email, @RequestParam String password) {
+    public String register(@RequestParam String name, @RequestParam String email, @RequestParam String password, HttpSession session) {
 
         // might have to do this in SQL way later
         if (name == null || name.isEmpty() ||
@@ -27,6 +29,9 @@ public class RegisterUser {
 
         // register user
         userRepo.registerUser(name, email, password);
+        User user = userRepo.loginUser(email, password).orElse(null);
+        session.setAttribute("userId", user.getId());
+        session.setAttribute("email", user.getEmail());
         return "Registration successful";
     }
 

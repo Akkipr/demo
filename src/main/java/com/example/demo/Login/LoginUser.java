@@ -5,6 +5,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpSession;
+
 @RestController
 public class LoginUser {
 
@@ -12,8 +14,7 @@ public class LoginUser {
     private UserRepo userRepo;
 
     @GetMapping("/login")
-    public String login(@RequestParam String email,
-                        @RequestParam String password) {
+    public String login(@RequestParam String email, @RequestParam String password, HttpSession session) {
 
         // might have to do this in SQL way later
         if (email == null || email.isEmpty() ||
@@ -25,6 +26,8 @@ public class LoginUser {
         User user = userRepo.loginUser(email, password).orElse(null);
 
         if (user != null) {
+            session.setAttribute("userId", user.getId());
+            session.setAttribute("email", user.getEmail());
             return "Login successful";
         }
 

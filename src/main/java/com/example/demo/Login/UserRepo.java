@@ -13,6 +13,12 @@ public interface UserRepo extends JpaRepository<User, Long> {
     @Query(value = "SELECT * FROM public.users WHERE email = ?1", nativeQuery = true)
     Optional<User> findByEmail(String email);       // optional because it may or may not find a user with that email
 
+    // try to a user by email
+    @Query(value = "SELECT * FROM public.users WHERE id = ?1", nativeQuery = true)
+    @SuppressWarnings("override")
+    Optional<User> findById(Long id);       // optional because it may or may not find a user with that email
+
+
     // insert a new user (register)
     @Modifying
     @Transactional
