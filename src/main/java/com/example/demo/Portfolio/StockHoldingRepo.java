@@ -18,11 +18,15 @@ public interface StockHoldingRepo extends JpaRepository<StockHolding, Long> {
     @Query(value = "SELECT * FROM public.stock_holdings WHERE portfolio_id = ?1 AND symbol = ?2", nativeQuery = true)
     Optional<StockHolding> findHoldingByPortfolioAndSymbol(Long portfolioId, String symbol);
     
-    // create a new stock holding
+    // insert without returning anything
     @Modifying
     @Transactional
-    @Query(value = "INSERT INTO public.stock_holdings (portfolio_id, symbol, share_count) VALUES (?1, ?2, ?3) RETURNING holding_id", nativeQuery = true)
-    Long createStockHolding(Long portfolioId, String symbol, Integer shareCount);
+    @Query(value = "INSERT INTO public.stock_holdings (portfolio_id, symbol, share_count) VALUES (?1, ?2, ?3)", nativeQuery = true)
+    void insertStockHolding(Long portfolioId, String symbol, Integer shareCount);
+
+    // get the holding ID after insert
+    @Query(value = "SELECT holding_id FROM public.stock_holdings WHERE portfolio_id = ?1 AND symbol = ?2 ORDER BY holding_id DESC LIMIT 1", nativeQuery = true)
+    Long getHoldingId(Long portfolioId, String symbol);
     
     // update share count
     @Modifying

@@ -21,8 +21,11 @@ public interface PortfolioRepo extends JpaRepository<Portfolio, Long> {
     // create a new portfolio
     @Modifying
     @Transactional
-    @Query(value = "INSERT INTO public.portfolios (user_id, portfolio_name, balance) VALUES (?1, ?2, ?3) RETURNING portfolio_id", nativeQuery = true)
-    Long createPortfolio(Long userId, String portfolioName, Double balance);
+    @Query(value = "INSERT INTO public.portfolios (user_id, portfolio_name, balance) VALUES (?1, ?2, ?3)", nativeQuery = true)
+    void insertPortfolio(Long userId, String portfolioName, Double balance);
+
+    @Query(value = "SELECT portfolio_id FROM public.portfolios WHERE user_id = ?1 AND portfolio_name = ?2 ORDER BY portfolio_id DESC LIMIT 1", nativeQuery = true)
+    Long getPortfolioId(Long userId, String portfolioName);
     
     // update portfolio balance
     @Modifying

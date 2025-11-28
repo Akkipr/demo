@@ -51,7 +51,11 @@ public class ManagePortfolios {
             initialBalance = 0.0; // default to 0 if not provided, already handled by @RequestParam
         }
         
-        Long portfolioId = portfolioRepo.createPortfolio(userId, portfolioName, initialBalance); // create portfolio
+        // insert first
+        portfolioRepo.insertPortfolio(userId, portfolioName, initialBalance);
+
+        // then fetch the ID
+        Long portfolioId = portfolioRepo.getPortfolioId(userId, portfolioName);
         
         return "Portfolio created successfully with ID: " + portfolioId;
     }

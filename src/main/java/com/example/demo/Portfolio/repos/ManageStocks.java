@@ -78,14 +78,15 @@ public class ManageStocks {
         // check if holding already exists
         Optional<StockHolding> existingHolding = stockHoldingRepo.findHoldingByPortfolioAndSymbol(portfolioId, normalizedSymbol);
         
+        // instead of createStockHolding with RETURNING:
         if (existingHolding.isPresent()) {
             // update existing holding
             StockHolding holding = existingHolding.get();
             Integer newShareCount = holding.getShareCount() + shares;
             stockHoldingRepo.updateShareCount(holding.getHoldingId(), newShareCount);
         } else {
-            // create new holding
-            stockHoldingRepo.createStockHolding(portfolioId, normalizedSymbol, shares);
+            // insert first
+            stockHoldingRepo.insertStockHolding(portfolioId, normalizedSymbol, shares);
         }
         
         // update portfolio balance
