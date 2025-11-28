@@ -14,7 +14,7 @@ public interface StockRepo extends JpaRepository<Stock, String> {
     Optional<Stock> findBySymbol(String symbol);
     
     // get the latest close price from stocks table (the historical data table)
-    @Query(value = "SELECT symbol, close AS currentPrice FROM public.stocks WHERE symbol = ?1 ORDER BY timestamp DESC LIMIT 1", nativeQuery = true)
+    @Query(value = "SELECT symbol, close AS currentPrice, timestamp FROM public.stocks WHERE symbol = ?1 ORDER BY timestamp DESC LIMIT 1", nativeQuery = true)
     Optional<StockPriceInfo> getLatestPrice(String symbol);
     
     // update or insert current price in stocks_current table

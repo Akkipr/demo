@@ -1,7 +1,5 @@
 package com.example.demo.Portfolio;
 
-import java.time.LocalDate;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -12,27 +10,20 @@ import lombok.Data;
 
 @Entity
 @Data
-@Table(name = "transfers")
-public class Transfer {
+@Table(name = "stock_holdings")
+public class StockHolding {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "transfer_id")
-    private Long transferId;
+    @Column(name = "holding_id")
+    private Long holdingId;
     
     @Column(name = "portfolio_id")
     private Long portfolioId;
     
-    private Double amount;
-    private LocalDate date;
+    private String symbol;
     
-    @Column(name = "trans_type")
-    private String transType;
-    
-    @Column(name = "from_acc")
-    private String fromAcc;
-    
-    @Column(name = "to_acc")
-    private String toAcc;
+    @Column(name = "share_count")
+    private Integer shareCount;
 }
 

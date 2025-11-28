@@ -3,6 +3,6 @@ package com.example.demo.Portfolio;
 public interface StockPriceInfo {
     String getSymbol();
     Double getCurrentPrice();
-    Double getLatestPrice();
+    java.sql.Date getTimestamp();
 }
 

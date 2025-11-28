@@ -30,7 +30,7 @@ public interface PortfolioRepo extends JpaRepository<Portfolio, Long> {
     @Query(value = "UPDATE public.portfolios SET balance = ?2 WHERE portfolio_id = ?1", nativeQuery = true)
     void updateBalance(Long portfolioId, Double balance);
     
-    //delete potfolio
+    // delete portfolio
     @Modifying
     @Transactional
     @Query(value = "DELETE FROM public.portfolios WHERE portfolio_id = ?1", nativeQuery = true)

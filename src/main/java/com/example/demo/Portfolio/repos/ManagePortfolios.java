@@ -1,12 +1,17 @@
-package com.example.demo.Portfolio;
+package com.example.demo.Portfolio.repos;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.example.demo.Portfolio.Portfolio;
+import com.example.demo.Portfolio.PortfolioRepo;
+import com.example.demo.Portfolio.response.PortfolioSummaryResponse;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -17,29 +22,21 @@ public class ManagePortfolios {
     private PortfolioRepo portfolioRepo;
     
     @GetMapping("/portfolios")
-    public String getPortfolios(HttpSession session) {
+    public List<PortfolioSummaryResponse> getPortfolios(HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");
         
         if (userId == null) {
-            return "Not logged in";
+            return List.of();
         }
         
-        List<Portfolio> portfolios = portfolioRepo.findPortfoliosByUserId(userId);
+        List<Portfolio> portfolios = portfolioRepo.findPortfoliosByUserId(userId); // get all portfolios for user
         
-        if (portfolios.isEmpty()) {
-            return "No portfolios found";
-        }
-        
-        String result = "";     
-        for (Portfolio p : portfolios) {
-            result += "Portfolio ID: " + p.getPortfolioId() + ", Name: " + p.getPortfolioName() + ", Balance: $" + p.getBalance()+ "\n";
-        }
-        
-        return result;
+        // map to response objects, return list of summaries. The frontend can request details as needed
+        return portfolios.stream().map(p -> new PortfolioSummaryResponse(p.getPortfolioId(), p.getPortfolioName(), p.getBalance())).collect(Collectors.toList());
     }
     
     @PostMapping("/createportfolio")
-    public String createPortfolio(@RequestParam String portfolioName, @RequestParam Double initialBalance, HttpSession session) {
+    public String createPortfolio(@RequestParam String portfolioName, @RequestParam(defaultValue = "0.0") Double initialBalance, HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");
         
         if (userId == null) {
@@ -51,10 +48,10 @@ public class ManagePortfolios {
         }
         
         if (initialBalance == null) {
-            initialBalance = 0.0;
+            initialBalance = 0.0; // default to 0 if not provided, already handled by @RequestParam
         }
         
-        Long portfolioId = portfolioRepo.createPortfolio(userId, portfolioName, initialBalance);
+        Long portfolioId = portfolioRepo.createPortfolio(userId, portfolioName, initialBalance); // create portfolio
         
         return "Portfolio created successfully with ID: " + portfolioId;
     }

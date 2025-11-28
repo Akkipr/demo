@@ -1,0 +1,88 @@
+package com.example.demo.Portfolio.repos;
+
+import java.time.LocalDate;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.demo.Portfolio.StockDayRange;
+import com.example.demo.Portfolio.StockDayRangeRepo;
+import com.example.demo.Portfolio.service.StatisticsCacheService;
+
+import jakarta.servlet.http.HttpSession;
+
+@RestController
+public class AddStockData {
+    
+    @Autowired
+    private StockDayRangeRepo stockDayRangeRepo;
+    
+    @Autowired
+    private StatisticsCacheService statisticsCacheService;
+    
+    @PostMapping("/addstockdata")
+    public String addStockData(@RequestParam String symbol, @RequestParam String date, @RequestParam Double open, @RequestParam Double high, @RequestParam Double low, @RequestParam Double close, @RequestParam Long volume, HttpSession session) {
+        
+        Long userId = (Long) session.getAttribute("userId");
+        
+        if (userId == null) {
+            return "Not logged in";
+        }
+        
+        try {
+            LocalDate stockDate = LocalDate.parse(date);
+            String normalizedSymbol = symbol.trim().toUpperCase();
+            
+            // check if data for this date already exists, prevent duplicates
+            List<StockDayRange> existing = stockDayRangeRepo.findBySymbolAndDateRange(normalizedSymbol, stockDate, stockDate);
+            
+            if (!existing.isEmpty()) {
+                return "Stock data already exists for " + symbol + " on " + date + ". Use update endpoint to modify.";
+            }
+            
+            // insert new stock data (this is a simplified example, actual implementation should be in a different table)
+            stockDayRangeRepo.insertStockData(normalizedSymbol, stockDate, open, high, low, close, volume);
+            
+            // update current price in stocks_current table since this is the latest info we got !!
+            stockDayRangeRepo.updateCurrentPrice(normalizedSymbol, close);
+            statisticsCacheService.invalidateStockStatistics(normalizedSymbol);
+            
+            return "Stock data added successfully for " + normalizedSymbol + " on " + date;
+            
+        } catch (Exception e) {
+            return "Error adding stock data";
+        }
+    }
+    
+    @PostMapping("/updatestockdata")
+    public String updateStockData(@RequestParam String symbol, @RequestParam String date, @RequestParam Double open, @RequestParam Double high, @RequestParam Double low, @RequestParam Double close, @RequestParam Long volume, HttpSession session) {
+        
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
+            return "Not logged in";
+        }
+        
+        try {
+            LocalDate stockDate = LocalDate.parse(date);
+            String normalizedSymbol = symbol.trim().toUpperCase();
+            
+            // update stock data
+            stockDayRangeRepo.updateStockData(normalizedSymbol, stockDate, open, high, low, close, volume);
+            
+            // if close price is an actual value given by the user, update current price in stocks_current table
+            if (close != null) {
+                stockDayRangeRepo.updateCurrentPrice(normalizedSymbol, close);
+            }
+            statisticsCacheService.invalidateStockStatistics(normalizedSymbol);
+            
+            return "Stock data updated successfully for " + normalizedSymbol + " on " + date;
+            
+        } catch (Exception e) {
+            return "Error updating stock data";
+        }
+    }
+}
+
