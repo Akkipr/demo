@@ -24,6 +24,10 @@ public class FuturePrices {
     @GetMapping("/futureprices")
     public List<PricePoint> getFuturePrices(@RequestParam String symbol, @RequestParam(required = false, defaultValue = "30") Integer days, @RequestParam(required = false) String startDate, HttpSession session) {
 
+        if (days == 0) {
+            return List.of();
+        }
+
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) {
             return List.of();      // usually shouldn't happen for price data but why nottt
@@ -72,10 +76,22 @@ public class FuturePrices {
             return List.of();
         }
 
+        // Get the last known price to start predictions from
+        Double lastPrice = closes.get(closes.size() - 1);
+        
+        // Calculate daily changes from historical data
+        List<Double> dailyChanges = new ArrayList<>();
+        for (int i = 1; i < closes.size(); i++) {
+            dailyChanges.add(closes.get(i) - closes.get(i - 1));
+        }
+
         List<PricePoint> predictions = new ArrayList<>();
+        Double currentPrice = lastPrice;
         for (int i = 0; i < days; i++) {
-            Double price = closes.get(i % closes.size());               // simple repeating pattern based on historical closes, could be improved with real prediction algorithms but we js using previous years
-            predictions.add(new PricePoint(start.plusDays(i), price));  // assign date and predicted price
+            Double change = dailyChanges.get(i % dailyChanges.size());  // repeat the daily change pattern
+            currentPrice = currentPrice + change;
+            if (currentPrice < 0) currentPrice = 0.01;  // prevent negative prices
+            predictions.add(new PricePoint(start.plusDays(i), currentPrice));
         }
 
         return predictions;
