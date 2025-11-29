@@ -1,14 +1,17 @@
 package com.example.demo.Portfolio.repos;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.example.demo.Portfolio.HoldingDetails;
 import com.example.demo.Portfolio.Portfolio;
@@ -36,80 +39,81 @@ public class PortfolioStatistics {
     @Autowired
     private StockHoldingRepo stockHoldingRepo;
     
-    @GetMapping("/portfoliostatistics")
-    public String getPortfolioStatistics(@RequestParam Long portfolioId, @RequestParam(required = false) String startDate, @RequestParam(required = false) String endDate, HttpSession session) {
-        
+   @GetMapping("/portfoliostatistics")
+    public Map<String, Object> getPortfolioStatisticsJson(
+            @RequestParam Long portfolioId,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String timeRange,
+            HttpSession session) {
+
         Long userId = (Long) session.getAttribute("userId");
-        
         if (userId == null) {
-            return "Not logged in";
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not logged in");
         }
-        
-        // verify portfolio ownership
+
         Optional<Portfolio> portfolioOpt = portfolioRepo.findPortfolioByUserIdAndPortfolioId(userId, portfolioId);
-        
         if (!portfolioOpt.isPresent()) {
-            return "Portfolio not found or access denied";
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Portfolio not found or access denied");
         }
-        
-        DateRange range = resolvePortfolioRange(portfolioId, startDate, endDate); // get the range based on holdings
+
+        DateRange range = resolvePortfolioRange(portfolioId, startDate, endDate, timeRange);
         if (range == null) {
-            return "No stock data available for this portfolio.";
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No stock data available for this portfolio");
         }
-        
-        StringBuilder header1 = new StringBuilder();
-        // this is the header
-        header1.append("Portfolio Statistics for: ").append(portfolioOpt.get().getPortfolioName()).append("\n");
-        header1.append("Time Period: ").append(range.start()).append(" to ").append(range.end()).append("\n\n");
-        
-        Map<String, StockStatisticsCache> stockStats = statisticsCacheService.getPortfolioStockStats(portfolioId, range.start(), range.end());
-        
-        if (stockStats.isEmpty()) {
-            return header1.append("No stock data available for this time period.\n").toString();
-        }
-        
-        header1.append("Stock Statistics:\n");
-        header1.append(String.format("%-10s %-15s %-15s %-20s %-15s\n", 
-            "Symbol", "Mean Return", "Std Dev", "Coefficient of Var", "Beta"));
-        header1.append("------------------------------------------------------------------------\n");
-        
-        for (Map.Entry<String, StockStatisticsCache> entry : stockStats.entrySet()) {
-            StockStatisticsCache stat = entry.getValue();
-            Double meanReturn = stat.getMeanReturn();
-            Double stdDev = stat.getStdDev();
-            Double cov = stat.getCoefficientOfVariation();
-            Double beta = stat.getBeta();
-            header1.append(String.format("%-10s %-15.6f %-15.6f %-20.6f %-15.6f\n",
-                entry.getKey(),
-                meanReturn != null ? meanReturn : 0.0,
-                stdDev != null ? stdDev : 0.0,
-                cov != null ? cov : 0.0,
-                beta != null ? beta : 0.0));
-        }
-        
-        header1.append("\n");
-        
+
+        // correlation matrix
         List<PortfolioCovarianceCache> matrix = statisticsCacheService.getPortfolioCovariance(portfolioId, range.start(), range.end());
-        
-        if (!matrix.isEmpty()) {
-            header1.append("Covariance/Correlation Matrix:\n");
-            header1.append(String.format("%-10s %-10s %-20s %-20s\n", 
-                "Stock 1", "Stock 2", "Covariance", "Correlation"));
-            header1.append("------------------------------------------------------------\n");
-            
-            for (PortfolioCovarianceCache entry : matrix) {
-                Double covariance = entry.getCovariance();
-                Double correlation = entry.getCorrelation();
-                header1.append(String.format("%-10s %-10s %-20.6f %-20.6f\n",
-                    entry.getSymbol1(),
-                    entry.getSymbol2(),
-                    covariance != null ? covariance : 0.0,
-                    correlation != null ? correlation : 0.0));
+
+        // convert to JSON-friendly map
+        Map<String, Map<String, Double>> correlationMatrix = new HashMap<>();
+        for (PortfolioCovarianceCache entry : matrix) {
+            correlationMatrix
+                .computeIfAbsent(entry.getSymbol1(), k -> new HashMap<>())
+                .put(entry.getSymbol2(), entry.getCorrelation());
+        }
+
+        for (String stockA : correlationMatrix.keySet()) {
+            for (String stockB : correlationMatrix.keySet()) {
+
+                double valueAB =
+                    correlationMatrix.getOrDefault(stockA, Map.of())
+                                    .getOrDefault(stockB, Double.NaN);
+
+                double valueBA =
+                    correlationMatrix.getOrDefault(stockB, Map.of())
+                                    .getOrDefault(stockA, Double.NaN);
+
+                // If AB exists but BA doesn't, fill BA
+                if (!Double.isNaN(valueAB) && Double.isNaN(valueBA)) {
+                    correlationMatrix
+                        .computeIfAbsent(stockB, k -> new HashMap<>())
+                        .put(stockA, valueAB);
+                }
+
+                // If BA exists but AB doesn't, fill AB
+                if (!Double.isNaN(valueBA) && Double.isNaN(valueAB)) {
+                    correlationMatrix
+                        .computeIfAbsent(stockA, k -> new HashMap<>())
+                        .put(stockB, valueBA);
+                }
             }
         }
-        
-        return header1.toString();
+
+        // Always enforce diagonal = 1.0
+        for (String stock : correlationMatrix.keySet()) {
+            correlationMatrix.get(stock).put(stock, 1.0);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("portfolioName", portfolioOpt.get().getPortfolioName());
+        result.put("timePeriod", Map.of("start", range.start().toString(), "end", range.end().toString()));
+        result.put("correlationMatrix", correlationMatrix);
+
+        return result; // Spring will auto-convert this Map to JSON
     }
+
+
     
     @GetMapping("/stockstatistics")
     public String getStockStatistics(
@@ -173,7 +177,8 @@ public class PortfolioStatistics {
         return new DateRange(start, end);
     }
 
-    private DateRange resolvePortfolioRange(Long portfolioId, String startDate, String endDate) {
+    private DateRange resolvePortfolioRange(Long portfolioId, String startDate, String endDate, String timeRange) {
+
         List<HoldingDetails> holdings = stockHoldingRepo.getHoldingDetailsByPortfolio(portfolioId);
         if (holdings.isEmpty()) {
             return null;
@@ -187,22 +192,52 @@ public class PortfolioStatistics {
             }
         }
 
-        if (latest == null) {
-            return null;
-        }
+        if (latest == null) return null;
 
         LocalDate end = endDate != null ? LocalDate.parse(endDate) : latest;
         if (end.isAfter(latest)) {
             end = latest;
         }
 
-        LocalDate start = startDate != null ? LocalDate.parse(startDate) : end.minusYears(1);
+        LocalDate start;
+
+        if (startDate != null) {
+            start = LocalDate.parse(startDate);
+
+        } else if (timeRange != null) {
+            start = calculateStartDate(end, timeRange);   // ← PARSE HERE
+
+        } else {
+            start = end.minusYears(1);
+        }
+
         if (start.isAfter(end)) {
             start = end.minusYears(1);
         }
 
         return new DateRange(start, end);
     }
+
+    private LocalDate calculateStartDate(LocalDate end, String timeRange) {
+        timeRange = timeRange.toLowerCase().trim();
+
+        if (timeRange.endsWith("y")) {
+            int years = Integer.parseInt(timeRange.replace("y", ""));
+            return end.minusYears(years);
+        }
+        if (timeRange.endsWith("m")) {
+            int months = Integer.parseInt(timeRange.replace("m", ""));
+            return end.minusMonths(months);
+        }
+        if (timeRange.endsWith("w")) {
+            int weeks = Integer.parseInt(timeRange.replace("w", ""));
+            return end.minusWeeks(weeks);
+        }
+
+        // Default fallback
+        return end.minusYears(1);
+    }
+
 
     private record DateRange(LocalDate start, LocalDate end) {}
 }

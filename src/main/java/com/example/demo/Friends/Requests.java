@@ -32,12 +32,17 @@ public class Requests {
             return "Not logged in"; //this should not happen but ehhh
         }
 
+
+
         User user2 = userRepo.findByEmail(email2_id).orElse(null);
         if (user2 == null) {
             return "User does not exist";
         }
 
         long receiverId = user2.getId();
+        if (requesterId == receiverId) {
+            return "You cannot friend yourself!";
+        }
         // check if there was a recent rejection
         Optional<Friend> recentReject = friendRepo.wasRecentlyRejected(requesterId, receiverId);
         
