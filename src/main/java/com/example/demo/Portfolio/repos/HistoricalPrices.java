@@ -42,7 +42,7 @@ public class HistoricalPrices {
             return List.of();
         }
         
-        LocalDate latest = stockDayRangeRepo.findLatestDate(symbol);
+        LocalDate latest = stockDayRangeRepo.findLatestCombinedDate(symbol);
         if (latest == null) {
             return List.of();
         }
@@ -71,25 +71,16 @@ public class HistoricalPrices {
         if (start.isAfter(end)) {
             start = end.minusYears(1);
         }
+
         
-        List<StockDayRange> prices = stockDayRangeRepo.findBySymbolAndDateRange(symbol, start, end);
-        if (prices.isEmpty()) {
-            prices = stockDayRangeRepo.findBySymbol(symbol);
-            if (prices.isEmpty()) {
-                return List.of();
-            }
-        }
+        List<StockDayRange> combinedPrices = stockDayRangeRepo.findCombinedPrices(symbol, start, end);
         
         List<PricePoint> result = new ArrayList<>();
-        for (int i = prices.size() - 1; i >= 0; i--) {
-            StockDayRange price = prices.get(i);
+        for (StockDayRange price : combinedPrices) {
             Double close = price.getClose() != null ? price.getClose() : price.getOpen();
-            if (close == null) {
-                close = 0.0;
-            }
+            if (close == null) close = 0.0;
             result.add(new PricePoint(price.getTimestamp(), close));
         }
         return result;
     }
 }
-

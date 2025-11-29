@@ -8,19 +8,20 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface StockRepo extends JpaRepository<Stock, String> {
-    
-    // get current price of a stock (from stocks_current table)
-    @Query(value = "SELECT symbol, current_price FROM public.stocks_current WHERE symbol = ?1", nativeQuery = true)
+
+    @Query(value = " SELECT symbol, close AS current_price FROM public.NewStocks WHERE symbol = ?1 ORDER BY timestamp DESC LIMIT 1", nativeQuery = true)
     Optional<Stock> findBySymbol(String symbol);
-    
+
+    @Query(value = "SELECT close AS currentPrice, timestamp FROM public.NewStocks WHERE symbol = ?1 ORDER BY timestamp DESC LIMIT 1", nativeQuery = true)
+    Optional<StockPriceInfo> getLatestPriceFromNewStocks(String symbol);
+
+
     // get the latest close price from stocks table (the historical data table)
     @Query(value = "SELECT symbol, close AS currentPrice, timestamp FROM public.stocks WHERE symbol = ?1 ORDER BY timestamp DESC LIMIT 1", nativeQuery = true)
     Optional<StockPriceInfo> getLatestPrice(String symbol);
-    
-    // update or insert current price in stocks_current table
+
     @Modifying
     @Transactional
-    @Query(value = "INSERT INTO public.stocks_current (symbol, current_price) VALUES (?1, ?2) ON CONFLICT (symbol) DO UPDATE SET current_price = ?2", nativeQuery = true)
+    @Query(value = "INSERT INTO public.NewStocks (timestamp, symbol, open, high, low, close, volume) VALUES (CURRENT_DATE, ?1, ?2, ?2, ?2, ?2, 0)", nativeQuery = true)
     void updateCurrentPrice(String symbol, Double price);
 }
-

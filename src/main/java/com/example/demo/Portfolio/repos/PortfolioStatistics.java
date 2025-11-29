@@ -158,7 +158,7 @@ public class PortfolioStatistics {
     }
 
     private DateRange resolveSymbolRange(String symbol, String startDate, String endDate) {
-        LocalDate latest = stockDayRangeRepo.findLatestDate(symbol.trim().toUpperCase());
+        LocalDate latest = stockDayRangeRepo.findLatestCombinedDate(symbol.trim().toUpperCase());
         if (latest == null) {
             return null;
         }
@@ -185,7 +185,7 @@ public class PortfolioStatistics {
 
         LocalDate latest = null;
         for (HoldingDetails holding : holdings) {
-            LocalDate symbolLatest = stockDayRangeRepo.findLatestDate(holding.getSymbol());
+            LocalDate symbolLatest = stockDayRangeRepo.findLatestCombinedDate(holding.getSymbol());
             if (symbolLatest != null && (latest == null || symbolLatest.isAfter(latest))) {
                 latest = symbolLatest;
             }

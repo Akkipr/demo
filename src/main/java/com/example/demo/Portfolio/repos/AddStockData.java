@@ -24,7 +24,7 @@ public class AddStockData {
     private StatisticsCacheService statisticsCacheService;
     
     @PostMapping("/addstockdata")
-    public String addStockData(@RequestParam String symbol, @RequestParam String date, @RequestParam Double open, @RequestParam Double high, @RequestParam Double low, @RequestParam Double close, @RequestParam Long volume, HttpSession session) {
+    public String addStockData(@RequestParam String symbol, @RequestParam String date,@RequestParam(required = false) Double open, @RequestParam(required = false) Double high, @RequestParam(required = false) Double low, @RequestParam(required = false) Double close, @RequestParam(required = false) Long volume, HttpSession session) {
         
         Long userId = (Long) session.getAttribute("userId");
         
@@ -43,11 +43,8 @@ public class AddStockData {
                 return "Stock data already exists for " + symbol + " on " + date + ". Use update endpoint to modify.";
             }
             
-            // insert new stock data (this is a simplified example, actual implementation should be in a different table)
-            stockDayRangeRepo.insertStockData(normalizedSymbol, stockDate, open, high, low, close, volume);
-            
             // update current price in stocks_current table since this is the latest info we got !!
-            stockDayRangeRepo.updateCurrentPrice(normalizedSymbol, close);
+            stockDayRangeRepo.updateCurrentPrice(stockDate, normalizedSymbol,open,high,low,close,volume);
             statisticsCacheService.invalidateStockStatistics(normalizedSymbol);
             
             return "Stock data added successfully for " + normalizedSymbol + " on " + date;
@@ -58,7 +55,7 @@ public class AddStockData {
     }
     
     @PostMapping("/updatestockdata")
-    public String updateStockData(@RequestParam String symbol, @RequestParam String date, @RequestParam Double open, @RequestParam Double high, @RequestParam Double low, @RequestParam Double close, @RequestParam Long volume, HttpSession session) {
+    public String updateStockData(@RequestParam String symbol, @RequestParam String date,@RequestParam(required = false) Double open, @RequestParam(required = false) Double high, @RequestParam(required = false) Double low, @RequestParam(required = false) Double close, @RequestParam(required = false) Long volume, HttpSession session) {
         
         Long userId = (Long) session.getAttribute("userId");
         if (userId == null) {
@@ -74,7 +71,7 @@ public class AddStockData {
             
             // if close price is an actual value given by the user, update current price in stocks_current table
             if (close != null) {
-                stockDayRangeRepo.updateCurrentPrice(normalizedSymbol, close);
+                stockDayRangeRepo.updateCurrentPrice(stockDate, normalizedSymbol,open,high,low,close,volume);
             }
             statisticsCacheService.invalidateStockStatistics(normalizedSymbol);
             
@@ -85,4 +82,3 @@ public class AddStockData {
         }
     }
 }
-

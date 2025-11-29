@@ -44,7 +44,7 @@ public class FuturePrices {
             days = 365;     // cap max days to 1 year
         }
 
-        LocalDate latest = stockDayRangeRepo.findLatestDate(normalizedSymbol);
+        LocalDate latest = stockDayRangeRepo.findLatestCombinedDate(normalizedSymbol);
         if (latest == null) {
             return List.of();  // no data for this symbol
         }
@@ -54,9 +54,9 @@ public class FuturePrices {
         LocalDate historicalEnd = latest;
 
         // get the historical data for the past year to base predictions on
-        List<StockDayRange> history = stockDayRangeRepo.findBySymbolAndDateRange(normalizedSymbol, historicalStart, historicalEnd);
+        List<StockDayRange> history = stockDayRangeRepo.findCombinedPrices(normalizedSymbol, historicalStart, historicalEnd);
         if (history.isEmpty()) {
-            history = stockDayRangeRepo.findBySymbol(normalizedSymbol);
+            history = stockDayRangeRepo.findBySymbol(normalizedSymbol);  // fallback, unlikely needed
         }
 
         if (history.isEmpty()) {

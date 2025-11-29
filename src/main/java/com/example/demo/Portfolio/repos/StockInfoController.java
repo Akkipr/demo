@@ -30,7 +30,11 @@ public class StockInfoController {
         
         String normalizedSymbol = symbol.trim().toUpperCase();
         
-        Optional<StockPriceInfo> priceOpt = stockRepo.getLatestPrice(normalizedSymbol);
+        Optional<StockPriceInfo> priceOpt = stockRepo.getLatestPriceFromNewStocks(normalizedSymbol);
+
+        if (!priceOpt.isPresent()) {
+            priceOpt = stockRepo.getLatestPrice(normalizedSymbol);
+        }
         
         if (priceOpt.isEmpty()) {
             return new StockPriceResponse(normalizedSymbol, 0.0, null, false);

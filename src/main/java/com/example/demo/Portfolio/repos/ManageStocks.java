@@ -59,8 +59,11 @@ public class ManageStocks {
         
         Portfolio portfolio = portfolioOpt.get();
         
-        // get current stock price
-        Optional<StockPriceInfo> priceOpt = stockRepo.getLatestPrice(normalizedSymbol);
+        Optional<StockPriceInfo> priceOpt = stockRepo.getLatestPriceFromNewStocks(normalizedSymbol);
+
+        if (!priceOpt.isPresent()) {
+            priceOpt = stockRepo.getLatestPrice(normalizedSymbol);
+        }
         
         if (!priceOpt.isPresent()) {
             return "Stock symbol not found or no price data available";
@@ -144,8 +147,11 @@ public class ManageStocks {
             return "Insufficient shares. You own " + holding.getShareCount() + " shares of " + normalizedSymbol;
         }
         
-        // get current stock price
-        Optional<StockPriceInfo> priceOpt = stockRepo.getLatestPrice(normalizedSymbol);
+        Optional<StockPriceInfo> priceOpt = stockRepo.getLatestPriceFromNewStocks(normalizedSymbol);
+
+        if (!priceOpt.isPresent()) {
+            priceOpt = stockRepo.getLatestPrice(normalizedSymbol);
+        }
         
         if (!priceOpt.isPresent()) {
             return "Stock price not available";
@@ -184,4 +190,3 @@ public class ManageStocks {
                ". New balance: $" + String.format("%.2f", newBalance);
     }
 }
-
