@@ -116,46 +116,45 @@ public class PortfolioStatistics {
 
     
     @GetMapping("/stockstatistics")
-    public String getStockStatistics(
+    public Map<String, Object> getStockStatistics(
             @RequestParam String symbol,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
             HttpSession session) {
         
+        Map<String, Object> result = new HashMap<>();
+
         Long userId = (Long) session.getAttribute("userId");
         
         if (userId == null) {
-            return "Not logged in";
+            result.put("error", "You are not logged in!");
+            return result;
         }
         
         DateRange range = resolveSymbolRange(symbol, startDate, endDate);
         if (range == null) {
-            return "No data available for symbol " + symbol + " in the specified time period.";
+            result.put("error", "No data available for symbol " + symbol + " in the specified time period.");
+            return result;
         }
         
         StockStatisticsCache stats = statisticsCacheService.getOrComputeStockStats(symbol, range.start(), range.end());
         
         if (stats == null) {
-            return "No data available for symbol " + symbol + " in the specified time period.";
+            result.put("error", "No data available for symbol " + symbol + " in the specified time period.");
+            return result;
         }
         
-        Double meanReturn = stats.getMeanReturn();
-        Double stdDev = stats.getStdDev();
-        Double cov = stats.getCoefficientOfVariation();
-        Double beta = stats.getBeta();
-        StringBuilder result = new StringBuilder();
-        result.append("Statistics for ").append(symbol).append("\n");
-        result.append("Time Period: ").append(range.start()).append(" to ").append(range.end()).append("\n\n");
-        result.append("Mean Daily Return: ").append(String.format("%.6f", 
-            meanReturn != null ? meanReturn : 0.0)).append("\n");
-        result.append("Standard Deviation: ").append(String.format("%.6f", 
-            stdDev != null ? stdDev : 0.0)).append("\n");
-        result.append("Coefficient of Variation: ").append(String.format("%.6f", 
-            cov != null ? cov : 0.0)).append("\n");
-        result.append("Beta (vs Market): ").append(String.format("%.6f", 
-            beta != null ? beta : 0.0)).append("\n");
+        result.put("timeInterval", Map.of(
+            "start", range.start().toString(),
+            "end", range.end().toString()
+        ));
+
+        result.put("meanReturn", stats.getMeanReturn());
+        result.put("standardDeviation", stats.getStdDev());
+        result.put("cov", stats.getCoefficientOfVariation());
+        result.put("beta", stats.getBeta());
         
-        return result.toString();
+        return result;
     }
 
     private DateRange resolveSymbolRange(String symbol, String startDate, String endDate) {
