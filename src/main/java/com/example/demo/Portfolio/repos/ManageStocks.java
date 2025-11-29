@@ -100,9 +100,6 @@ public class ManageStocks {
         transferRepo.createTransfer(portfolioId, totalCost, LocalDate.now(),
             "Buy Stock", "Portfolio " + portfolioId, normalizedSymbol + " (" + shares + " shares)");
         
-        // update current price in stocks_current table
-        stockRepo.updateCurrentPrice(normalizedSymbol, currentPrice);
-        
         statisticsCacheService.invalidatePortfolioStatistics(portfolioId);
         
         // return success message, again, format to 2 decimal places
@@ -178,8 +175,6 @@ public class ManageStocks {
         transferRepo.createTransfer(portfolioId, totalProceeds, LocalDate.now(),
             "Sell Stock", normalizedSymbol + " (" + shares + " shares)", "Portfolio " + portfolioId);
         
-        // update current price in stocks_current table
-        stockRepo.updateCurrentPrice(normalizedSymbol, currentPrice);
         
         statisticsCacheService.invalidatePortfolioStatistics(portfolioId);
         

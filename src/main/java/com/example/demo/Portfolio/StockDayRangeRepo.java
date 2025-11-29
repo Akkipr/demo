@@ -40,29 +40,13 @@ public interface StockDayRangeRepo extends JpaRepository<StockDayRange, StockDay
     @Query(value = "INSERT INTO public.NewStocks (timestamp, symbol, open, high, low, close, volume) VALUES (?1, ?2, COALESCE(?3, 6), COALESCE(?4, 6), COALESCE(?5, 6), COALESCE(?6, 6), COALESCE(?7, 6))", nativeQuery = true)
     void updateCurrentPrice(LocalDate timestamp, String symbol, Double open, Double high, Double low, Double close,Long volume);
 
-    @Query(value = """
-        SELECT * FROM (
-            SELECT timestamp, symbol, close, open, high, low, volume
-            FROM stocks
-            WHERE symbol = :symbol AND timestamp BETWEEN :start AND :end
-            UNION ALL
-            SELECT timestamp, symbol, close, open, high, low, volume
-            FROM NewStocks
-            WHERE symbol = :symbol AND timestamp BETWEEN :start AND :end
-        ) AS combined
-        ORDER BY timestamp ASC
-        """, nativeQuery = true)
+    @Query(value = "SELECT * FROM (SELECT timestamp, symbol, close, open, high, low, volume FROM stocks WHERE symbol = :symbol AND timestamp BETWEEN :start AND :end UNION ALL SELECT timestamp, symbol, close, open, high, low, volume FROM NewStocks WHERE symbol = :symbol AND timestamp BETWEEN :start AND :end) AS combined ORDER BY timestamp ASC", nativeQuery = true)
     List<StockDayRange> findCombinedPrices(
         @Param("symbol") String symbol,
         @Param("start") LocalDate start,
         @Param("end") LocalDate end
     );
 
-    @Query(value = """
-       SELECT GREATEST(
-           COALESCE((SELECT MAX(timestamp) FROM stocks WHERE symbol = :symbol), '1900-01-01'),
-           COALESCE((SELECT MAX(timestamp) FROM NewStocks WHERE symbol = :symbol), '1900-01-01')
-       )
-       """, nativeQuery = true)
+    @Query(value = "SELECT GREATEST(COALESCE((SELECT MAX(timestamp) FROM stocks WHERE symbol = :symbol), '1900-01-01'),COALESCE((SELECT MAX(timestamp) FROM NewStocks WHERE symbol = :symbol), '1900-01-01'))", nativeQuery = true)
     LocalDate findLatestCombinedDate(@Param("symbol") String symbol);
 }

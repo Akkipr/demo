@@ -1,12 +1,12 @@
 package com.example.demo.Stocklists;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.Portfolio.StockHolding;
-
-import java.util.List;
 
 @Service
 public class StocklistsService {
@@ -28,7 +28,23 @@ public class StocklistsService {
         Stocklists stockList = new Stocklists(name, visibility, userId);
         return stocklistsRepository.save(stockList);
     }
-    
+
+    public List<Stocklists> getPublicStockListsNotOwnedByUser(Long userId) {
+        return stocklistsRepository.findByVisibilityIgnoreCaseAndUserIdNot("Public", userId);
+    }
+
+    public StockListReview addReview(Long stockListId, String text, String email) {
+        //Stocklists stockList = stocklistsRepository.findById(stockListId)
+                //.orElseThrow(() -> new RuntimeException("Stock list not found"));
+
+        StockListReview review = new StockListReview();
+        review.setText(text);
+        review.setEmail(email);
+        review.setStockListId(stockListId);// adjust if your entity uses a different field/method name
+
+        return reviewRepository.save(review);
+    }
+
     @Transactional
     public void deleteStockList(Long id, Long userId) {
         Stocklists stockList = stocklistsRepository.findById(id)

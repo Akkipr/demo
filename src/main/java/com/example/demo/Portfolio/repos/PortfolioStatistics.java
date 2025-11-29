@@ -84,14 +84,14 @@ public class PortfolioStatistics {
                     correlationMatrix.getOrDefault(stockB, Map.of())
                                     .getOrDefault(stockA, Double.NaN);
 
-                // If AB exists but BA doesn't, fill BA
+                // if AB exists but BA doesn't, fill BA
                 if (!Double.isNaN(valueAB) && Double.isNaN(valueBA)) {
                     correlationMatrix
                         .computeIfAbsent(stockB, k -> new HashMap<>())
                         .put(stockA, valueAB);
                 }
 
-                // If BA exists but AB doesn't, fill AB
+                // if BA exists but AB doesn't, fill AB
                 if (!Double.isNaN(valueBA) && Double.isNaN(valueAB)) {
                     correlationMatrix
                         .computeIfAbsent(stockA, k -> new HashMap<>())
@@ -100,7 +100,7 @@ public class PortfolioStatistics {
             }
         }
 
-        // Always enforce diagonal = 1.0
+        // diagonal = 1.0
         for (String stock : correlationMatrix.keySet()) {
             correlationMatrix.get(stock).put(stock, 1.0);
         }
@@ -110,7 +110,7 @@ public class PortfolioStatistics {
         result.put("timePeriod", Map.of("start", range.start().toString(), "end", range.end().toString()));
         result.put("correlationMatrix", correlationMatrix);
 
-        return result; // Spring will auto-convert this Map to JSON
+        return result; // map goes to JSON
     }
 
 

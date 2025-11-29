@@ -1,14 +1,24 @@
 package com.example.demo.Stocklists;
 
-import jakarta.servlet.http.HttpSession;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.Portfolio.StockHolding;
 
-import java.util.List;
-import java.util.Map;
+import jakarta.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/stocklists")
@@ -27,6 +37,37 @@ public class StocklistsController {
         }
         return ResponseEntity.ok(stocklistsService.getStockListsByUserId(userId));
     }
+
+    @GetMapping("/other")
+    public ResponseEntity<List<Stocklists>> getOtherStockLists(HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(stocklistsService.getPublicStockListsNotOwnedByUser(userId));
+    }
+
+    // ...existing code...
+    // POST /stocklists/{id}/reviews - Add a review (params instead of body)
+    @PostMapping("/{id}/reviews")
+    public ResponseEntity<StockListReview> addReview(
+            @PathVariable Long id,
+            @RequestParam String text,
+            HttpSession session) {
+
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) return ResponseEntity.status(401).build();
+
+        if (text == null || text.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        String email = session.getAttribute("email").toString();
+        
+        StockListReview created = stocklistsService.addReview(id, text, email);
+        return ResponseEntity.status(201).body(created);
+    }
+
     
     // POST /stocklists - Create a new stock list
     @PostMapping

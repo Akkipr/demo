@@ -54,31 +54,4 @@ public class AddStockData {
         }
     }
     
-    @PostMapping("/updatestockdata")
-    public String updateStockData(@RequestParam String symbol, @RequestParam String date,@RequestParam(required = false) Double open, @RequestParam(required = false) Double high, @RequestParam(required = false) Double low, @RequestParam(required = false) Double close, @RequestParam(required = false) Long volume, HttpSession session) {
-        
-        Long userId = (Long) session.getAttribute("userId");
-        if (userId == null) {
-            return "Not logged in";
-        }
-        
-        try {
-            LocalDate stockDate = LocalDate.parse(date);
-            String normalizedSymbol = symbol.trim().toUpperCase();
-            
-            // update stock data
-            stockDayRangeRepo.updateStockData(normalizedSymbol, stockDate, open, high, low, close, volume);
-            
-            // if close price is an actual value given by the user, update current price in stocks_current table
-            if (close != null) {
-                stockDayRangeRepo.updateCurrentPrice(stockDate, normalizedSymbol,open,high,low,close,volume);
-            }
-            statisticsCacheService.invalidateStockStatistics(normalizedSymbol);
-            
-            return "Stock data updated successfully for " + normalizedSymbol + " on " + date;
-            
-        } catch (Exception e) {
-            return "Error updating stock data";
-        }
-    }
 }
