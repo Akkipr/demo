@@ -23,30 +23,17 @@ public interface StockDayRangeRepo extends JpaRepository<StockDayRange, StockDay
     @Query(value = "SELECT close FROM public.stocks WHERE symbol = ?1 ORDER BY timestamp DESC LIMIT 1", nativeQuery = true)
     Double getLatestClosePrice(String symbol);
     
-    // insert new stock data
-    @Modifying
-    @Transactional
-    @Query(value = "INSERT INTO public.stocks (symbol, timestamp, open, high, low, close, volume) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)", nativeQuery = true)
-    void insertStockData(String symbol, LocalDate timestamp, Double open, Double high, Double low, Double close, Long volume);
-    
-    // update stock data
-    @Modifying
-    @Transactional
-    @Query(value = "UPDATE public.stocks SET open = COALESCE(?3, open), high = COALESCE(?4, high), low = COALESCE(?5, low), close = COALESCE(?6, close), volume = COALESCE(?7, volume) WHERE symbol = ?1 AND timestamp = ?2", nativeQuery = true)
-    void updateStockData(String symbol, LocalDate timestamp, Double open, Double high, Double low, Double close, Long volume);
-    
+    //insert new stock data
     @Modifying
     @Transactional
     @Query(value = "INSERT INTO public.NewStocks (timestamp, symbol, open, high, low, close, volume) VALUES (?1, ?2, COALESCE(?3, 6), COALESCE(?4, 6), COALESCE(?5, 6), COALESCE(?6, 6), COALESCE(?7, 6))", nativeQuery = true)
     void updateCurrentPrice(LocalDate timestamp, String symbol, Double open, Double high, Double low, Double close,Long volume);
 
+    // combines historical and latest stock data for a symbol across two tables
     @Query(value = "SELECT * FROM (SELECT timestamp, symbol, close, open, high, low, volume FROM stocks WHERE symbol = :symbol AND timestamp BETWEEN :start AND :end UNION ALL SELECT timestamp, symbol, close, open, high, low, volume FROM NewStocks WHERE symbol = :symbol AND timestamp BETWEEN :start AND :end) AS combined ORDER BY timestamp ASC", nativeQuery = true)
-    List<StockDayRange> findCombinedPrices(
-        @Param("symbol") String symbol,
-        @Param("start") LocalDate start,
-        @Param("end") LocalDate end
-    );
+    List<StockDayRange> findCombinedPrices(@Param("symbol") String symbol, @Param("start") LocalDate start, @Param("end") LocalDate end);
 
+    //get the most recent timestamp in both stocks or newstocks
     @Query(value = "SELECT GREATEST(COALESCE((SELECT MAX(timestamp) FROM stocks WHERE symbol = :symbol), '1900-01-01'),COALESCE((SELECT MAX(timestamp) FROM NewStocks WHERE symbol = :symbol), '1900-01-01'))", nativeQuery = true)
     LocalDate findLatestCombinedDate(@Param("symbol") String symbol);
 }
