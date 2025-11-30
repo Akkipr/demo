@@ -131,7 +131,7 @@ public class ManageStocks {
         
         Portfolio portfolio = portfolioOpt.get();
         
-        // Check if holding exists
+        // check if holding exists
         Optional<StockHolding> holdingOpt = stockHoldingRepo.findHoldingByPortfolioAndSymbol(portfolioId, normalizedSymbol);
         
         if (!holdingOpt.isPresent()) {
@@ -143,7 +143,7 @@ public class ManageStocks {
         if (holding.getShareCount() < shares) {
             return "Insufficient shares. You own " + holding.getShareCount() + " shares of " + normalizedSymbol;
         }
-        
+        // get the most recent price by basically union-ing the NewStocks table and the Stocks table.
         Optional<StockPriceInfo> priceOpt = stockRepo.getLatestPriceFromNewStocks(normalizedSymbol);
 
         if (!priceOpt.isPresent()) {

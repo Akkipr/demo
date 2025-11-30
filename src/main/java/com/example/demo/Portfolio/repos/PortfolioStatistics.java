@@ -116,27 +116,23 @@ public class PortfolioStatistics {
 
     
     @GetMapping("/stockstatistics")
-    public Map<String, Object> getStockStatistics(
-            @RequestParam String symbol,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
-            HttpSession session) {
+    public Map<String, Object> getStockStatistics( @RequestParam String symbol, @RequestParam(required = false) String startDate, @RequestParam(required = false) String endDate, HttpSession session) {
         
         Map<String, Object> result = new HashMap<>();
-
+        //ensure user is logged in and get the ID
         Long userId = (Long) session.getAttribute("userId");
         
         if (userId == null) {
             result.put("error", "You are not logged in!");
             return result;
         }
-        
+        // figure out the actual date range we should use for this symbol. This is for the start and end date intervals we need when the user ends up choosing their stats.
         DateRange range = resolveSymbolRange(symbol, startDate, endDate);
         if (range == null) {
             result.put("error", "No data available for symbol " + symbol + " in the specified time period.");
             return result;
         }
-        
+        // try to pull the cached stats from the database. If not compute using our super amazinggg query 
         StockStatisticsCache stats = statisticsCacheService.getOrComputeStockStats(symbol, range.start(), range.end());
         
         if (stats == null) {
@@ -148,7 +144,7 @@ public class PortfolioStatistics {
             "start", range.start().toString(),
             "end", range.end().toString()
         ));
-
+        // add all the computed statistics to the response
         result.put("meanReturn", stats.getMeanReturn());
         result.put("standardDeviation", stats.getStdDev());
         result.put("cov", stats.getCoefficientOfVariation());
@@ -162,12 +158,12 @@ public class PortfolioStatistics {
         if (latest == null) {
             return null;
         }
-
+        // get the end date and compare with the stockrange of the latest stock seen
         LocalDate end = endDate != null ? LocalDate.parse(endDate) : latest;
         if (end.isAfter(latest)) {
             end = latest;
         }
-
+        // set the date based on startDate or 1 year by default
         LocalDate start = startDate != null ? LocalDate.parse(startDate) : end.minusYears(1);
         if (start.isAfter(end)) {
             start = end.minusYears(1);
@@ -177,12 +173,12 @@ public class PortfolioStatistics {
     }
 
     private DateRange resolvePortfolioRange(Long portfolioId, String startDate, String endDate, String timeRange) {
-
+        // get the holdings for a specific portfolio
         List<HoldingDetails> holdings = stockHoldingRepo.getHoldingDetailsByPortfolio(portfolioId);
         if (holdings.isEmpty()) {
             return null;
         }
-
+        // get the lastest combined date based on both NewStocks and stocks.
         LocalDate latest = null;
         for (HoldingDetails holding : holdings) {
             LocalDate symbolLatest = stockDayRangeRepo.findLatestCombinedDate(holding.getSymbol());
@@ -204,7 +200,7 @@ public class PortfolioStatistics {
             start = LocalDate.parse(startDate);
 
         } else if (timeRange != null) {
-            start = calculateStartDate(end, timeRange);   // ← PARSE HERE
+            start = calculateStartDate(end, timeRange); 
 
         } else {
             start = end.minusYears(1);
@@ -219,8 +215,8 @@ public class PortfolioStatistics {
 
     private LocalDate calculateStartDate(LocalDate end, String timeRange) {
         timeRange = timeRange.toLowerCase().trim();
-
-        if (timeRange.endsWith("y")) {
+        // basic conditional that goes based on the specific timing that the user asks, this time with year, month or week.
+        if (timeRange.endsWith("y")) {  
             int years = Integer.parseInt(timeRange.replace("y", ""));
             return end.minusYears(years);
         }

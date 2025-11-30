@@ -28,7 +28,7 @@ public class StocklistsController {
     @Autowired
     private StocklistsService stocklistsService;
     
-    // GET /stocklists/my - Get current user's stock lists
+    // get current user's stock lists
     @GetMapping("/my")
     public ResponseEntity<List<Stocklists>> getMyStockLists(HttpSession session) {
         Long userId = (Long) session.getAttribute("userId");
@@ -47,8 +47,7 @@ public class StocklistsController {
         return ResponseEntity.ok(stocklistsService.getPublicStockListsNotOwnedByUser(userId));
     }
 
-    // ...existing code...
-    // POST /stocklists/{id}/reviews - Add a review (params instead of body)
+    // add a review (params instead of body)
     @PostMapping("/{id}/reviews")
     public ResponseEntity<StockListReview> addReview(
             @PathVariable Long id,
@@ -69,7 +68,7 @@ public class StocklistsController {
     }
 
     
-    // POST /stocklists - Create a new stock list
+    // create a new stock list
     @PostMapping
     public ResponseEntity<Stocklists> createStockList(
             @RequestBody Map<String, String> request,
@@ -84,7 +83,7 @@ public class StocklistsController {
         return ResponseEntity.ok(newList);
     }
     
-    // DELETE /stocklists/{id} - Delete a stock list
+    // delete a stock list
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteStockList(
             @PathVariable Long id,
@@ -97,7 +96,7 @@ public class StocklistsController {
         return ResponseEntity.ok().build();
     }
     
-    // PUT /stocklists/{id}/visibility - Update visibility
+    // update visibility
     @PutMapping("/{id}/visibility")
     public ResponseEntity<Void> updateVisibility(
             @PathVariable Long id,
@@ -112,7 +111,7 @@ public class StocklistsController {
         return ResponseEntity.ok().build();
     }
     
-    // GET /stocklists/{id}/holdings - Get holdings for a stock list
+    // get holdings for a stock list
     @GetMapping("/{id}/holdings")
     public ResponseEntity<List<StockHolding>> getHoldings(
             @PathVariable Long id,
@@ -124,7 +123,7 @@ public class StocklistsController {
         return ResponseEntity.ok(stocklistsService.getHoldings(id));
     }
     
-    // PUT /stocklists/{id}/holdings - Update all holdings for a stock list
+    // update all holdings for a stock list
     @PutMapping("/{id}/holdings")
     public ResponseEntity<Void> updateHoldings(
             @PathVariable Long id,
@@ -138,13 +137,13 @@ public class StocklistsController {
         return ResponseEntity.ok().build();
     }
     
-    // GET /stocklists/{id}/reviews - Get reviews for a stock list
+    // get reviews for a stock list
     @GetMapping("/{id}/reviews")
     public ResponseEntity<List<StockListReview>> getReviews(@PathVariable Long id) {
         return ResponseEntity.ok(stocklistsService.getReviews(id));
     }
     
-    // DELETE /stocklists/{id}/reviews/{reviewId} - Delete a review
+    // delete a review
     @DeleteMapping("/{id}/reviews/{reviewId}")
     public ResponseEntity<Void> deleteReview(
             @PathVariable Long id,

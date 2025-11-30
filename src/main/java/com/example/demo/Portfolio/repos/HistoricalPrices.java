@@ -28,12 +28,14 @@ public class HistoricalPrices {
     @GetMapping("/historicalprices")
     public List<PricePoint> getHistoricalPrices(@RequestParam(required = false) Long portfolioId, @RequestParam(required = false) String symbol, @RequestParam(required = false) String interval, @RequestParam(required = false) String startDate, @RequestParam(required = false) String endDate, HttpSession session) {
         
+        // grab user session and ensure they are logged in
         Long userId = (Long) session.getAttribute("userId");
         
         if (userId == null) {
             return List.of();
         }
         
+        // make sure the portfolio actually belongs to the user (more checking)
         if (portfolioId != null && portfolioRepo.findPortfolioByUserIdAndPortfolioId(userId, portfolioId).isEmpty()) {
             return List.of();
         }
@@ -46,12 +48,14 @@ public class HistoricalPrices {
         if (latest == null) {
             return List.of();
         }
-        
+
+        // find the most recent date we have price data for this stock. If there's no data at all, return empty.
         LocalDate end = endDate != null ? LocalDate.parse(endDate) : latest;
         if (end.isAfter(latest)) {
             end = latest;
         }
         
+        // find the starting date, based on whether the set it or just default to one year.
         LocalDate start;
         if (startDate != null) {
             start = LocalDate.parse(startDate);
@@ -72,9 +76,10 @@ public class HistoricalPrices {
             start = end.minusYears(1);
         }
 
-        
+        // pull the combined daily price data from our repo.
         List<StockDayRange> combinedPrices = stockDayRangeRepo.findCombinedPrices(symbol, start, end);
         
+        //convert StockDayRange rows into lightweight PricePoint objects to be used by the frontend.
         List<PricePoint> result = new ArrayList<>();
         for (StockDayRange price : combinedPrices) {
             Double close = price.getClose() != null ? price.getClose() : price.getOpen();

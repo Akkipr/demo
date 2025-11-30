@@ -57,7 +57,7 @@ public class TransferHistory {
             })
             .collect(Collectors.toList());
     }
-
+    // normalizes any transaction type string into a consistent format.
     private String normalizeType(String type) {
         if (type == null) {
             return "";
@@ -68,9 +68,7 @@ public class TransferHistory {
             case "withdraw", "withdrawal" -> "Withdraw";
             case "buy stock", "buy" -> "Buy Stock";
             case "sell stock", "sell" -> "Sell Stock";
-            default -> normalized.isEmpty()
-                ? ""
-                : normalized.substring(0, 1).toUpperCase() + normalized.substring(1);
+            default -> normalized.isEmpty() ? "" : normalized.substring(0, 1).toUpperCase() + normalized.substring(1); // return the cleaned value with the first letter capitalized or just return empty string by defalt.
         };
     }
 }

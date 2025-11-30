@@ -12,16 +12,19 @@ public interface PortfolioCovarianceCacheRepo extends JpaRepository<PortfolioCov
 
     List<PortfolioCovarianceCache> findByPortfolioIdAndStartDateAndEndDate(Long portfolioId, LocalDate startDate, LocalDate endDate);
 
+    // insert a covariance record for a pair of symbols in a portfolio.
     @Modifying
     @Transactional
     @Query(value = "INSERT INTO portfolio_covariance_cache (portfolio_id, symbol1, symbol2, start_date, end_date, covariance, correlation, last_updated) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, NOW()) ON CONFLICT (portfolio_id, symbol1, symbol2, start_date, end_date) DO UPDATE SET covariance = EXCLUDED.covariance, correlation = EXCLUDED.correlation, last_updated = NOW()", nativeQuery = true)
     void upsert(Long portfolioId, String symbol1, String symbol2, LocalDate startDate, LocalDate endDate, Double covariance, Double correlation);
 
+    // remove cached covariance calculations for a given portfolio, usually when holdings are added or removed.
     @Modifying
     @Transactional
     @Query(value = "DELETE FROM portfolio_covariance_cache WHERE portfolio_id = ?1", nativeQuery = true)
     void deleteByPortfolioId(Long portfolioId);
 
+    // remove cached covariance entries for only a specific date range.
     @Modifying
     @Transactional
     @Query(value = "DELETE FROM portfolio_covariance_cache WHERE portfolio_id = ?1 AND start_date = ?2 AND end_date = ?3", nativeQuery = true)

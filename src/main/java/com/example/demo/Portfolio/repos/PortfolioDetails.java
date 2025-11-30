@@ -78,7 +78,7 @@ public class PortfolioDetails {
         
         return new PortfolioOverviewResponse(portfolio.getPortfolioId(), portfolio.getPortfolioName(), portfolio.getBalance(), totalMarketValue, totalValue, holdingResponses);
     }
-    
+    // subject to erase
     @GetMapping("/portfolioholdings")
     public List<HoldingResponse> getHoldings(@RequestParam Long portfolioId, HttpSession session) {
 

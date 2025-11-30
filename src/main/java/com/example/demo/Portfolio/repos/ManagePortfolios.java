@@ -72,7 +72,7 @@ public class ManagePortfolios {
         if (!portfolioRepo.findPortfolioByUserIdAndPortfolioId(userId, portfolioId).isPresent()) {
             return "Portfolio not found or access denied";
         }
-        
+        // delete query that we already made
         portfolioRepo.deletePortfolio(portfolioId);
         return "Portfolio removed successfully";
     }
